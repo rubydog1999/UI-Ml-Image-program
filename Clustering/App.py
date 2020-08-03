@@ -1,3 +1,4 @@
+import time
 from tkinter import *
 import numpy as np
 import pandas
@@ -8,6 +9,7 @@ import os
 from random import randrange
 from math import sqrt
 import cv2
+from matplotlib import animation
 from pandastable import Table
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -16,7 +18,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 root = Tk()
 root.title("Machine Learning App")
-root.iconbitmap('c:/Users/Trung Dung/PycharmProjects/Clustering/Icon.ico')
+root.iconbitmap('d:/Pycharm/pycharmproject/Clustering/Icon.ico')
 root['background'] = "#856ff8"
 
 class FullScreenApp(object):
@@ -76,16 +78,13 @@ def openimg():
         return
     my_img = ImageTk.PhotoImage(Image.open(filename))
     my_label_img = Label(imgae_layer, image=my_img, bg ="black")
-    # my_label_img.bind('<ButtonPress-1>', lambda event: self.__move_from())
-    # my_label_img.bind('<B1-Motion>', lambda event: __move_to)
-    # my_label_img.bind('<MouseWheel>',lambda event: __wheel)
     my_label_img.place(relwidth=1, relheight=1)
 root.protocol("WM_DELETE_WINDOW", exitApp)
 def run():
     values = clicked.get()
     #run k-mean method
     if values == "K-mean":
-        myRgraphic = Label(result_graphic, text="Result Graphic",bg= "black",fg="white")
+        myRgraphic = Label(result_graphic, text="Result Graphic")
         myRgraphic.place(relwidth=1, relheight=1)
         k_val = int(e.get())
         image = cv2.imread(filename=filename)
@@ -99,6 +98,7 @@ def run():
             Array = []
             centers = []
             clusters = {}
+
             for i in range(k):
                 center = (randrange(len(img)), randrange(len(img[0])))
                 if center not in centers:
@@ -169,12 +169,15 @@ def run():
                 table_element_2.append(z)
         row = len(table_element_2)
         column_names = ["Cluster", "Pixel RGB", "pixel X Y", "Distance"]
+        global table_cluster
         table_cluster = pandas.DataFrame(table_element_2, columns=column_names, index=range(row))
-        table_final = Table(result_text, dataframe=table_cluster, showtoolbar=True, showstatusbar=True)
+        table_final = Table(result_text, dataframe=table_cluster,  showstatusbar=True)
         table_final.show()
-    #run Image segmentation
+
+#run Image segmentation
     elif values == "Image segmentation":
-        myRtext = Label(result_text, text="ResultText",bg= "black",fg="white")
+        global figure
+        myRtext = Label(result_text, text="ResultText")
         myRtext.place(relwidth=1, relheight=1)
         k_val = int(e.get())
         image = cv2.imread(filename=filename)
@@ -194,17 +197,30 @@ def run():
         plt.title('Original Image'), plt.xticks([]), plt.yticks([])
         plt.subplot(1, 2, 2), plt.imshow(result_image)
         plt.title('Segmented Image K = %i' % K), plt.xticks([]), plt.yticks([])
-        canv = FigureCanvasTkAgg(figure,result_graphic)
+        # plt.show()
+        canv = FigureCanvasTkAgg(figure, result_graphic)
         canv.draw()
         get_widz = canv.get_tk_widget()
         get_widz.pack()
+
+
 
     else:
         rep = messagebox.showwarning("Warning","Must choose method !")
         Label(root,text = rep)
 
+def exportCSV():
+    values = clicked.get()
+    if values == "K-mean":
+            export_file_path = filedialog.asksaveasfilename(defaultextension='.csv')
+            table_cluster.to_csv(export_file_path, index=True, header=True)
+    elif values == "Image segmentation":
 
-
+            save_result_imgae = filedialog.asksaveasfilename(defaultextension='.png')
+            figure.savefig(save_result_imgae)
+    else:
+        rep = messagebox.showwarning("Warning", "No result to save")
+        Label(root, text=rep)
 
 
 
@@ -214,11 +230,11 @@ root.config(menu=menu)
 subMenu = Menu(menu)
 menu.add_cascade(label="File", menu=subMenu)
 subMenu.add_command(label="Open File", command=openimg)
-subMenu.add_command(label="Save File", command=doNothing)
+subMenu.add_command(label="Save Result", command=exportCSV)
 otherMenu = Menu(menu)
 menu.add_cascade(label="Other", menu=otherMenu)
 otherMenu.add_command(label="Exit", command=exitApp)
-otherMenu.add_command(label="-----", command=doNothing)
+
 
 # Toolbar
 toolbar = Frame(root, bg="#4267B2", padx=25, pady=20)
@@ -257,5 +273,4 @@ imgae_layer.place(relx=0.25, rely=0.20, relwidth=0.35, relheight=0.35, anchor='n
 description_layer.place(relx=0.75, rely=0.20, relwidth=0.35, relheight=0.35, anchor='n')
 result_text.place(relx=0.25, rely=0.59, relwidth=0.35, relheight=0.35, anchor='n')
 result_graphic.place(relx=0.75, rely=0.59, relwidth=0.35, relheight=0.35, anchor='n')
-
 root.mainloop()
