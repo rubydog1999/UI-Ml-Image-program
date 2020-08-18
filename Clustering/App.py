@@ -1,6 +1,5 @@
 import time
 from tkinter import *
-import numpy as np
 import pandas
 from PIL import ImageTk, Image
 from tkinter import messagebox
@@ -8,11 +7,12 @@ from tkinter import filedialog
 import os
 from random import randrange
 from math import sqrt
-import cv2
-from matplotlib import animation
 from pandastable import Table
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import cv2
+import numpy as np
+from keras.models import load_model
 
 
 
@@ -62,6 +62,14 @@ def doDescription(value):
                                               " instead of processing the entire image. So here we get the k value and image\n"
                                               "​then we use the k-mean clustering algorithm to perform image segmentation",
                       bg = "black", fg = "white")
+        myDes.place(relwidth=1, relheight=1)
+    elif value == "Validation":
+        myDes = Label(description_layer,
+                      text="Validation is a method to determine and evaluate whether the photos you choose.\n"
+                           " The method will return Good and Fail.\n"
+                           " The method is implemented by Keras and Tensorflow.\n"
+                           " You can open the image and press the Run button to experience.\n",
+                      bg="black", fg="white")
         myDes.place(relwidth=1, relheight=1)
 
 def exitApp():
@@ -197,11 +205,35 @@ def run():
         plt.title('Original Image'), plt.xticks([]), plt.yticks([])
         plt.subplot(1, 2, 2), plt.imshow(result_image)
         plt.title('Segmented Image K = %i' % K), plt.xticks([]), plt.yticks([])
+        canvas = FigureCanvasTkAgg(figure, result_graphic)
+        global show_plot
+        if show_plot:
+            canvas.get_tk_widget().pack_forget()
+        canvas = FigureCanvasTkAgg(figure, result_graphic)
+        canvas.get_tk_widget().pack()
+        show_plot = True
         # plt.show()
-        canv = FigureCanvasTkAgg(figure, result_graphic)
-        canv.draw()
-        get_widz = canv.get_tk_widget()
-        get_widz.pack()
+
+
+    elif values == "Validation":
+        myRtext = Label(result_text, text="ResultText")
+        myRtext.place(relwidth=1, relheight=1)
+        model = load_model('Model-img.h5')
+        myRgraphic = Label(result_graphic, text="Result Graphic")
+        myRgraphic.place(relwidth=1, relheight=1)
+        image = cv2.imread(filename=filename)
+        image = cv2.resize(image, (98, 98))
+        image = np.reshape(image, [1, 98, 98, 3])
+        pred1 = model.predict_classes(image)
+        if pred1 == 1:
+            myDes = Label(result_text, text="Image is Good",
+                          bg="black", fg="white")
+            myDes.place(relwidth=1, relheight=1)
+        else:
+            myDes = Label(result_text, text="Image is Fail",
+                          bg="black", fg="white")
+            myDes.place(relwidth=1, relheight=1)
+
 
 
 
@@ -238,7 +270,7 @@ otherMenu.add_command(label="Exit", command=exitApp)
 
 # Toolbar
 toolbar = Frame(root, bg="#4267B2", padx=25, pady=20)
-inserBut = Button(toolbar, text="Image Open", command=openimg, padx=15, pady=15)
+inserBut = Button(toolbar, text="Open Image", command=openimg, padx=15, pady=15)
 inserBut.pack(side=LEFT, padx=2, pady=2)
 runBut = Button(toolbar, text="Run", command=run, padx=15, pady=15)
 runBut.pack(side=LEFT, padx=30, pady=2)
@@ -249,7 +281,7 @@ e.pack(side=LEFT, padx=2, pady=10,ipady =5,ipadx=20)
 e.insert(0, "")
 clicked = StringVar()
 clicked.set("Method")
-options = ["K-mean", "Image segmentation"]
+options = ["K-mean", "Image segmentation","Validation"]
 drop = OptionMenu(toolbar, clicked, *options, command=doDescription)
 drop.config(width=30, height=2)
 drop.pack(side=RIGHT, padx=2, pady=2)
@@ -273,4 +305,5 @@ imgae_layer.place(relx=0.25, rely=0.20, relwidth=0.35, relheight=0.35, anchor='n
 description_layer.place(relx=0.75, rely=0.20, relwidth=0.35, relheight=0.35, anchor='n')
 result_text.place(relx=0.25, rely=0.59, relwidth=0.35, relheight=0.35, anchor='n')
 result_graphic.place(relx=0.75, rely=0.59, relwidth=0.35, relheight=0.35, anchor='n')
+
 root.mainloop()
