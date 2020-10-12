@@ -88,10 +88,21 @@ def openimg():
     my_label_img = Label(imgae_layer, image=my_img, bg ="black")
     my_label_img.place(relwidth=1, relheight=1)
 root.protocol("WM_DELETE_WINDOW", exitApp)
+def check_table(table_cluster):
+    if table_cluster is not None:
+            del table_cluster
+def check_figure(figure):
+    if figure is not None:
+        del figure
 def run():
+    global table_cluster
+    table_cluster = 0
+    global figure
+    figure = 1
     values = clicked.get()
     #run k-mean method
     if values == "K-mean":
+        check_figure(figure)
         myRgraphic = Label(result_graphic, text="Result Graphic")
         myRgraphic.place(relwidth=1, relheight=1)
         k_val = int(e.get())
@@ -178,14 +189,13 @@ def run():
                 table_element_2.append(z)
         row = len(table_element_2)
         column_names = ["Cluster", "Pixel RGB", "pixel X Y", "Distance"]
-        global table_cluster
         table_cluster = pandas.DataFrame(table_element_2, columns=column_names, index=range(row))
         table_final = Table(result_text, dataframe=table_cluster,  showstatusbar=True)
         table_final.show()
 
 #run Image segmentation
     elif values == "Image segmentation":
-        global figure
+        check_table(table_cluster)
         myRtext = Label(result_text, text="ResultText")
         myRtext.place(relwidth=1, relheight=1)
         k_val = int(e.get())
@@ -212,6 +222,8 @@ def run():
 
 
     elif values == "Validation":
+        check_table(table_cluster)
+        check_figure(figure)
         myRtext = Label(result_text, text="ResultText")
         myRtext.place(relwidth=1, relheight=1)
         model = load_model('Modell-C527-2.h5')
@@ -240,12 +252,19 @@ def run():
 def exportCSV():
     values = clicked.get()
     if values == "K-mean":
-            export_file_path = filedialog.asksaveasfilename(defaultextension='.csv')
-            table_cluster.to_csv(export_file_path, index=True, header=True)
+            if table_cluster is None:
+                rep = messagebox.showwarning("Warning", "No result to save")
+                Label(root, text=rep)
+            else:
+                export_file_path = filedialog.asksaveasfilename(defaultextension='.csv')
+                table_cluster.to_csv(export_file_path, index=True, header=True)
     elif values == "Image segmentation":
-
-            save_result_imgae = filedialog.asksaveasfilename(defaultextension='.png')
-            figure.savefig(save_result_imgae)
+            if figure is None:
+                rep = messagebox.showwarning("Warning", "No result to save")
+                Label(root, text=rep)
+            else:
+                save_result_imgae = filedialog.asksaveasfilename(defaultextension='.png')
+                figure.savefig(save_result_imgae)
     else:
         rep = messagebox.showwarning("Warning", "No result to save")
         Label(root, text=rep)
